@@ -4,3 +4,5 @@ composer.lock
 node_modules
 build
 coverage
+/.idea/
+.phpunit.result.cache

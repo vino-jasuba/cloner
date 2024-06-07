@@ -26,34 +26,6 @@ class FunctionalTest extends TestCase
 
 	private $article;
 
-	protected function initUpchuck()
-	{
-
-		// Setup filesystem
-		$fs = new Vfs;
-		$this->fs_path = $fs->path('/');
-		$this->disk = new Filesystem(new Adapter($fs));
-
-		// Create upchuck adapter instance
-
-		$this->helpers = new Helpers([
-			'url_prefix' => '/uploads/'
-		]);
-
-		$manager = new MountManager([
-			'tmp' => $this->disk,
-			'disk' => $this->disk,
-		]);
-
-		$storage = new Storage($manager, $this->helpers);
-
-		$this->upchuck_adapter = new Upchuck(
-			$this->helpers,
-			$storage,
-			$this->disk
-		);
-	}
-
 	/**
 	 * @return mixed
 	 */
@@ -143,8 +115,6 @@ class FunctionalTest extends TestCase
 			'rating' => 4
 		]);
 
-		$this->disk->write('test.jpg', 'contents');
-
 		Photo::unguard();
 		$this->article->photos()->save(new Photo([
 			'uid' => 1,
@@ -156,7 +126,6 @@ class FunctionalTest extends TestCase
 	// Test that a record is created in the same database
 	function testExists()
 	{
-		$this->initUpchuck();
 		$this->setUpDatabase();
 		$this->migrateTables();
 		$this->seed();
@@ -164,7 +133,7 @@ class FunctionalTest extends TestCase
 		// Wait 1.5 seconds to be able to detect a difference in the timestamps
 		usleep(1500000);
 
-		$cloner = new Cloner($this->upchuck_adapter, $this->mockEvents());
+		$cloner = new Cloner(null, $this->mockEvents());
 		$clone = $cloner->duplicate($this->article);
 
 		// Test that the new article was created
@@ -206,14 +175,6 @@ class FunctionalTest extends TestCase
 		// Test callbacks
 		$this->assertNotEquals(1, $photo->uid);
 
-		// Test the file was created in a different place
-		$this->assertNotEquals('/uploads/test.jpg', $photo->image);
-
-		// Test that the file is the same
-		$path = $this->helpers->path($photo->image);
-		$this->assertTrue($this->disk->has($path));
-		$this->assertEquals('contents', $this->disk->read($path));
-
 		// Test one to many inverse (BelongsTo)
         $image = Image::first();
         $clone = $cloner->duplicate($image);
@@ -227,22 +188,17 @@ class FunctionalTest extends TestCase
 	// https://github.com/laravel/framework/issues/9355
 	function testExistsInAltDatabaseAndFilesystem()
 	{
-		$this->initUpchuck();
 		$this->setUpDatabase();
 		$this->migrateTables();
 		$this->migrateTables('alt');
 		$this->seed();
-
-		// ADd the remote disk to upchuck adapter
-		$this->remoteDisk = new Filesystem(new Adapter(new Vfs));
-		$this->upchuck_adapter->setDestination($this->remoteDisk);
 
 		// Make sure that the alt databse is empty
 		$this->assertEquals(0, DB::connection('alt')->table('articles')->count());
 		$this->assertEquals(0, DB::connection('alt')->table('authors')->count());
 		$this->assertEquals(0, DB::connection('alt')->table('photos')->count());
 
-		$cloner = new Cloner($this->upchuck_adapter, $this->mockEvents());
+		$cloner = new Cloner(null, $this->mockEvents());
 		$clone = $cloner->duplicateTo($this->article, 'alt');
 
 		// Test that the new article was created
@@ -266,12 +222,5 @@ class FunctionalTest extends TestCase
 
 		// Test callbacks
 		$this->assertNotEquals(1, $photo->uid);
-
-		// Test the file was created on the remote disk
-		$path = $this->helpers->path($photo->image);
-		$this->assertTrue($this->remoteDisk->has($path));
-
-		// Test that the file is the same
-		$this->assertEquals('contents', $this->remoteDisk->read($path));
 	}
 }

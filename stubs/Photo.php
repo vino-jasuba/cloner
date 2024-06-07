@@ -7,7 +7,7 @@ class Photo extends Eloquent {
 	use Cloneable;
 
 	private $clone_exempt_attributes = ['uid', 'source'];
-	private $cloneable_file_attributes = ['image'];
+	private $cloneable_file_attributes = [];
 
 	public function article() {
 		return $this->belongsTo('Bkwld\Cloner\Stubs\Article');

@@ -9,12 +9,11 @@
         }
     ],
     "require": {
-        "php": ">=7.0",
+        "php": ">=8.2",
         "illuminate/support": "^5.5|^6.0|^7.0|^8.0|^9.0|^10.0|^11.0"
     },
     "require-dev": {
         "phpunit/phpunit": "~6.0|~8.0|^9.5.10|^10.5",
-        "bkwld/upchuck": "^2.6@dev",
         "illuminate/database": "^5.5|^6.0|^10.0|^11.0",
         "league/flysystem-vfs": "^1.0",
         "mockery/mockery": "^1.2.3",
